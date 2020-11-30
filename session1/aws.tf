@@ -42,14 +42,14 @@ resource "aws_security_group" "opsschool_consul" {
 # Create an IAM role for the auto-join
 resource "aws_iam_role" "consul-join" {
   name               = "opsschool-consul-join"
-  assume_role_policy = file("${path.module}/templates/policies/assume-role.json")
+  assume_role_policy = file("assume-role.json")
 }
 
 # Create the policy
 resource "aws_iam_policy" "consul-join" {
   name        = "opsschool-consul-join"
   description = "Allows Consul nodes to describe instances for joining."
-  policy      = file("${path.module}/templates/policies/describe-instances.json")
+  policy      = file("describe-instances.json")
 }
 
 # Attach the policy

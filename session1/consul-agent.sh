@@ -55,6 +55,27 @@ tee /etc/consul.d/config.json > /dev/null <<EOF
 }
 EOF
 
+# Configure health check service
+cat << EOF >/etc/consul.d/webserver-80.json
+{
+  "service": {
+    "name": "webserver",
+    "id": "webserver-80",
+    "tags": ["nginx"],
+    "port": 80,
+    "checks": [
+      {
+        "id": "http",
+        "name": "HTTP on port 80",
+        "http": "http://localhost:80/",
+        "interval": "10s",
+        "timeout": "1s"
+      }
+    ]
+  }
+}
+EOF
+
 # Create user & grant ownership of folders
 useradd consul
 chown -R consul:consul /opt/consul /etc/consul.d /run/consul
@@ -66,7 +87,6 @@ tee /etc/systemd/system/consul.service > /dev/null <<"EOF"
 Description=Consul service discovery agent
 Requires=network-online.target
 After=network.target
-
 [Service]
 User=consul
 Group=consul
@@ -77,13 +97,20 @@ ExecStart=/usr/local/bin/consul agent -pid-file=/run/consul/consul.pid -config-d
 ExecReload=/bin/kill -s HUP $MAINPID
 KillSignal=SIGINT
 TimeoutStopSec=5
-
 [Install]
 WantedBy=multi-user.target
 EOF
 
+
+
+#curl -X PUT -d @webserver-80.json \ http://localhost:8500/v1/agent/service/register
 systemctl daemon-reload
 systemctl enable consul.service
 systemctl start consul.service
+
+apt-get install nginx -y
+systemctl enable nginx
+systemctl start nginx
+
 
 exit 0
